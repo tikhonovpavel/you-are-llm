@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# You Are LLM
+
+An interactive game where you can experience being a language model by predicting the next token in a sequence. This project demonstrates how large language models process and predict text token by token.
+
+## Features
+
+- Token-by-token text prediction game
+- Real-time feedback on your predictions
+- Visual comparison with actual LLM predictions
+- Token highlighting and error tracking
+- Progress and accuracy statistics
+- Skip tokens functionality
+- Multiple text samples to choose from
+
+## Tech Stack
+
+- Next.js 15.1.4
+- React 19
+- TypeScript
+- Tailwind CSS
+- Radix UI components
+- shadcn/ui for styled components
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js (latest LTS version recommended)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/tikhonovpavel/you-are-llm.git
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+cd you-are-llm
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Learn More
+### Building for Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The project is configured for GitHub Pages deployment. To deploy:
 
-## Deploy on Vercel
+```bash
+npm run deploy
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How to Play
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Select a text sample from the dropdown menu
+2. Try to predict the next token in the sequence
+3. Type your prediction or select from suggestions
+4. Get immediate feedback:
+   - Green: Correct prediction
+   - Red: Incorrect prediction
+   - Gray: Skipped token
+5. Click on any token to see actual LLM predictions for that position
+6. Track your accuracy and progress throughout the game
+
+## Project Structure
+
+- `/app`: Next.js app router and main layout
+- `/components`: React components including UI components from shadcn/ui
+- `/assets`: Game data including text samples and LLM predictions
+- `/public`: Static assets
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+[MIT License](LICENSE)
+
+## Acknowledgments
+
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Tailwind CSS for styling
+- Next.js framework
