@@ -9,8 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "predeploy": "npm run build && touch out/.nojekyll",
+    "deploy": "gh-pages -d out -t true"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.1.4",
