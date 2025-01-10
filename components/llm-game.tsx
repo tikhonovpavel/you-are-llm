@@ -3,7 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
 import { SkipForward } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,81 +15,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import seedrandom from 'seedrandom';
+
+import {
+    TextData,
+    PredictionItem,
+    ModelPredictions,
+    TextPreview,
+    DisplayedToken,
+    SuggestionItem,
+    WebpackRequire
+} from './interfaces';
+import { levenshteinDistance, normalizeToken } from './utils';
 import TOKEN_VOCABULARY from './assets/llama-3-8b__tokens.json';
 
-// Type definitions
-interface TextData {
-  sequence: string[];
-}
-
-interface PredictionItem {
-  token: string;
-  probability: number;
-}
-
-interface ModelPredictions {
-  [modelName: string]: PredictionItem[];
-}
-
-interface TextPreview {
-  id: string;
-  preview: string;
-}
-
-interface DisplayedToken {
-  text: string;
-  isCorrect: boolean;
-  wrongGuess: string | null;
-}
-
-interface SuggestionItem {
-    token: string;
-    distance: number;
-    isExactMatch: boolean;
-}
-
-interface WebpackRequire {
-    context(
-        directory: string,
-        useSubdirectories?: boolean,
-        regExp?: RegExp
-    ): {
-        keys(): string[];
-        <T>(id: string): T;
-        resolve(id: string): string;
-    };
-}
-
-// Helper function
-function levenshteinDistance(a: string, b: string): number {
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
-
-    const matrix: number[][] = [];
-
-    for (let i = 0; i <= b.length; i++) {
-        matrix[i] = [i];
-    }
-    for (let j = 0; j <= a.length; j++) {
-        matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= b.length; i++) {
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j] + 1
-                );
-            }
-        }
-    }
-
-    return matrix[b.length][a.length];
-}
 
 const LLMGame: React.FC = () => {
     const [availableTexts, setAvailableTexts] = useState<TextPreview[]>([]);
@@ -102,20 +44,9 @@ const LLMGame: React.FC = () => {
     const [isInputActive, setIsInputActive] = useState<boolean>(true);
     const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
     const [skipCount, setSkipCount] = useState<number>(0);
+    const [isHardcoreMode, setIsHardcoreMode] = useState<boolean>(true);
 
     const SPACE_SYMBOL = 'Ġ';
-
-    function normalizeToken(token: string): string {
-        let normalizedToken = token.startsWith(SPACE_SYMBOL) ? token.slice(1) : token;
-        
-        normalizedToken = normalizedToken
-            .replace(/[\u2012-\u2015]/g, '-')
-            .replace(/\u2043/g, '-')
-            .replace(/\u02D7/g, '-')
-            .replace(/\u2212/g, '-');
-        
-        return normalizedToken;
-    }
 
     useEffect(() => {
         const loadAvailableTexts = async () => {
@@ -186,8 +117,8 @@ const LLMGame: React.FC = () => {
 
             const sortedSuggestions = currentSuggestions
                 .map((token: string) => {
-                    const normalizedInput = normalizeToken(input);
-                    const normalizedToken = normalizeToken(token);
+                    const normalizedInput = normalizeToken(input, SPACE_SYMBOL);
+                    const normalizedToken = normalizeToken(token, SPACE_SYMBOL);
                     const isExactMatch = token === input;
             
                     return {
@@ -212,6 +143,34 @@ const LLMGame: React.FC = () => {
             setSuggestions([]);
         }
     };
+
+    const getModelSuggestions = (seed: number = 1): string[] => {
+        const rng = seedrandom(String(seed));
+     
+        if (!predictions || !currentText) return [];
+     
+        const currentPredictions = predictions[currentStep];
+        if (!currentPredictions || Object.keys(currentPredictions).length === 0) return [];
+     
+        // Take first model's predictions (assuming there's at least one model)
+        const modelName = Object.keys(currentPredictions)[0];
+        const modelPredictions = currentPredictions[modelName];
+     
+        // Get top 5 predictions
+        let topPredictions = modelPredictions
+            .slice(0, 5)
+            .map(pred => pred.token);
+     
+        // Check if correct token is in the predictions
+        const correctToken = currentText.sequence[currentStep];
+        if (!topPredictions.includes(correctToken)) {
+            // Replace the lowest probability prediction with the correct token
+            topPredictions[4] = correctToken;
+        }
+     
+        // Shuffle using seeded random
+        return topPredictions.sort(() => rng() - 0.5);
+     };
 
     const handleSuggestionClick = (token: string) => {
         if (!currentText) return;
@@ -310,6 +269,16 @@ const LLMGame: React.FC = () => {
             <Card className="w-full max-w-4xl mx-auto">
                 <CardHeader>
                     <CardTitle>You are an LLM</CardTitle>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                checked={isHardcoreMode}
+                                onCheckedChange={setIsHardcoreMode}
+                                id="mode-switch"
+                            />
+                            <Label htmlFor="mode-switch">Hardcore mode</Label>
+                        </div>
+                    </div>
                     <Select value={selectedTextId} onValueChange={handleTextSelection}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Выберите текст для предсказания..." />
@@ -375,27 +344,43 @@ const LLMGame: React.FC = () => {
 
                         {!gameCompleted && (
                             <div className="relative inline-block">
-                                <input
-                                    type="text"
-                                    value={userInput}
-                                    onChange={handleInputChange}
-                                    className="bg-white border rounded px-2 py-1 w-24 inline-block focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder=""
-                                    disabled={!isInputActive}
-                                />
-                                {suggestions.length > 0 && (
-                                    <div className="absolute left-0 top-full mt-1 w-48 bg-white border rounded-md shadow-lg z-50">
-                                        <div className="flex flex-col p-1">
-                                            {suggestions.map((suggestion, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => handleSuggestionClick(suggestion)}
-                                                    className="px-3 py-2 text-left hover:bg-gray-100 rounded-sm"
-                                                >
-                                                    {suggestion}
-                                                </button>
-                                            ))}
-                                        </div>
+                                {isHardcoreMode ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            value={userInput}
+                                            onChange={handleInputChange}
+                                            className="bg-white border rounded px-2 py-1 w-24 inline-block focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder=""
+                                            disabled={!isInputActive}
+                                        />
+                                        {suggestions.length > 0 && (
+                                            <div className="absolute left-0 top-full mt-1 w-48 bg-white border rounded-md shadow-lg z-50">
+                                                <div className="flex flex-col p-1">
+                                                    {suggestions.map((suggestion, index) => (
+                                                        <button
+                                                            key={index}
+                                                            onClick={() => handleSuggestionClick(suggestion)}
+                                                            className="px-3 py-2 text-left hover:bg-gray-100 rounded-sm"
+                                                        >
+                                                            {suggestion}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col p-1 w-48 bg-white border rounded-md shadow-lg">
+                                        {getModelSuggestions(currentStep).map((suggestion, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleSuggestionClick(suggestion)}
+                                                className="px-3 py-2 text-left hover:bg-gray-100 rounded-sm"
+                                            >
+                                                {suggestion}
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
                             </div>
