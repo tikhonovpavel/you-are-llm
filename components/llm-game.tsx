@@ -157,7 +157,7 @@ const LLMGame: React.FC = () => {
         const modelPredictions = currentPredictions[modelName];
      
         // Get top 5 predictions
-        let topPredictions = modelPredictions
+        const topPredictions = modelPredictions
             .slice(0, 5)
             .map(pred => pred.token);
      
